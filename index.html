@@ -6591,7 +6591,7 @@ if(window.__examRunning) startTimer(); else showIntroModal();/* Codex Adaptive F
   function addTypingDots(gen){var dots=document.createElement('div');dots.className='cu46-typing';dots.dataset.gen=gen;dots.innerHTML='<span></span><span></span><span></span>';body().appendChild(dots);body().scrollTop=body().scrollHeight;return dots;}
   function appendCard(title,lines,gen){return new Promise(function(resolve){if(gen!==generation){resolve();return;} var b=body(); var empty=b.querySelector('.cu46-empty'); if(empty)empty.remove(); var dots=addTypingDots(gen); setTimeout(function(){if(gen!==generation){dots.remove();resolve();return;} dots.remove(); var card=document.createElement('div');card.className='cu46-card'; var h=document.createElement('div');h.className='cu46-card-title';h.textContent=title; var c=document.createElement('div');c.className='cu46-card-body';card.appendChild(h);card.appendChild(c);b.appendChild(card); requestAnimationFrame(function(){card.classList.add('on');}); var arr=A(lines).map(norm).filter(Boolean), idx=0; function nextLine(){if(gen!==generation){resolve();return;} if(idx>=arr.length){typeset(card);b.scrollTop=b.scrollHeight;resolve();return;} var raw=arr[idx++]; var p=document.createElement('p');p.className='cu46-line';c.appendChild(p); if(hasMath(raw)){p.innerHTML=renderMathText(raw);typeset(p);p.style.opacity='0';p.style.transform='translateY(4px)';setTimeout(function(){p.style.transition='.18s ease';p.style.opacity='1';p.style.transform='translateY(0)';b.scrollTop=b.scrollHeight;setTimeout(nextLine,150);},50);} else {var i=0;(function tick(){if(gen!==generation){resolve();return;} i++; p.textContent=raw.slice(0,i); b.scrollTop=b.scrollHeight; if(i<raw.length)setTimeout(tick,12); else setTimeout(nextLine,100);})();}} nextLine();},180);});}
   function makeBlocks(mode,p){p=p||ctx||{}; var parts=selectedParts(p); if(!parts.length && window.__lastQuestionKey){var t=findByKey(window.__lastQuestionKey); if(t)parts=[t];} if(!parts.length){return [{title:mode==='solution'?'اعرض الحل':'توجيه',lines:['اختر سؤالًا أولًا ليظهر الشرح المرتبط به.']}];} var labels={more:'اشرح أكثر',rule:'اعرض القاعدة',example:'مثال مشابه',solution:'اعرض الحل'}; var key={more:'more',rule:'rule',example:'example',solution:'solution'}[mode]||'more'; var blocks=[]; parts.forEach(function(part){var h=part.help||{}; var lines=A(h[key]); if(mode==='solution' && !canSolve(p)) lines=['الحل الكامل يظهر فقط بعد المحاولة الثانية.','يمكنك الآن استخدام اشرح أكثر أو اعرض القاعدة أو مثال مشابه.']; if(!lines.length) lines=['لا يوجد محتوى مرتبط بهذا الفرع.']; blocks.push({title:(labels[mode]||'مساعدة')+' — '+partTitle(part),lines:lines});}); return blocks;}
-  function diagnosisBlocks(p){p=p||ctx||{}; var parts=selectedParts(p); var target=parts[0]; var lines=['راجع هذا الفرع تحديدًا قبل إعادة المحاولة.','ابدأ بتحديد المطلوب: هل هو تعريف، تمييز بين عينة ومجتمع، أم مستوى قياس؟','يمكنك الضغط على اشرح أكثر أو اعرض القاعدة أو مثال مشابه، والحل الكامل لا يظهر إلا بعد المحاولة الثانية.']; if(target && target.help && target.help.more && target.help.more[0]) lines=[target.help.more[0], 'هذا توجيه فقط بعد الخطأ الأول، وليس الحل الكامل.', 'استخدم الأزرار بالأسفل لإضافة بطاقات جديدة دون حذف السابق.']; return [{title:'تشخيص الخطأ — '+(target?partTitle(target):'السؤال الحالي'),lines:lines}];}
+  function diagnosisBlocks(p){p=p||ctx||{}; var parts=selectedParts(p); var target=parts[0]; var lines=['راجع هذا الفرع تحديدًا قبل إعادة المحاولة.','ابدأ بتحديد المطلوب: هل هو تعريف، تمييز بين عينة ومجتمع، أم مستوى قياس؟','يمكنك الضغط على اشرح أكثر أو اعرض القاعدة أو مثال مشابه، والحل الكامل لا يظهر إلا بعد المحاولة الثانية.']; if(target && target.help && target.help.more && target.help.more[0]) lines=[target.help.more[0], 'هذا توجيه فقط بعد الخطأ الأول، وليس الحل الكامل.']; return [{title:'تشخيص الخطأ — '+(target?partTitle(target):'السؤال الحالي'),lines:lines}];}
   function queue(blocks){var gen=generation; A(blocks).forEach(function(bl){chain=chain.then(function(){return appendCard(bl.title,bl.lines,gen);});}); return chain;}
   function respond(mode){generation++; var gen=generation; openDrawer(false); updateButtons(); var blocks=makeBlocks(mode,ctx||{}); return queue(blocks).then(function(){updateButtons();return {ok:true};});}
   function handleWrongAnswer(p){ctx=p||{}; generation++; chain=Promise.resolve(); openDrawer(true); updateButtons(); var token=[ctx.lesson,ctx.q&&ctx.q.id,ctx.branchIndex,ctx.attempt,A(ctx.wrongItems).map(function(w){return w.key;}).join('|')].join('::'); var now=Date.now(); if(token===lastDiagToken && now-lastDiagTime<1500){return true;} lastDiagToken=token; lastDiagTime=now; var blocks=diagnosisBlocks(ctx); if(canSolve(ctx)) blocks=blocks.concat(makeBlocks('solution',ctx)); queue(blocks); return true;}
@@ -6605,23 +6605,28 @@ if(window.__examRunning) startTimer(); else showIntroModal();/* Codex Adaptive F
 
 
 
-
-<!-- CoreUp V60: keep V58 math cleanup, restore original analysis drawer, stable static logos only -->
-<style id="coreup-v60-targeted-fix-css">
-  .logoWrap{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;}
+<!-- CoreUp V58 visible repair: logos, analysis drawer, visible LaTeX cleanup only -->
+<style id="coreup-v58-visible-repair-css">
+  .logoWrap{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;}
   .logoWrap img{display:block!important;visibility:visible!important;opacity:1!important;max-height:44px!important;width:auto!important;object-fit:contain!important;}
-  .coreup-v46-header-logo{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;width:46px!important;height:46px!important;border-radius:14px!important;overflow:hidden!important;}
-  .coreup-v46-header-logo img{display:block!important;visibility:visible!important;opacity:1!important;width:38px!important;height:38px!important;object-fit:contain!important;}
-  #drawerAI.show{transform:translateX(0)!important;visibility:visible!important;opacity:1!important;}
-  #fabOverlay.show{visibility:visible!important;opacity:1!important;pointer-events:all!important;}
+  .coreup-v46-header-logo{display:flex!important;visibility:visible!important;opacity:1!important;}
+  .coreup-v46-header-logo img{display:block!important;visibility:visible!important;opacity:1!important;object-fit:contain!important;}
+  #drawerAI.show{display:block!important;visibility:visible!important;opacity:1!important;transform:translateX(0)!important;}
+  #fabOverlay.show{display:block!important;visibility:visible!important;opacity:1!important;}
+  .cu46-card-title .cu58-title-only{font-weight:1000;}
 </style>
-<script id="coreup-v60-targeted-fix-js">
+<script id="coreup-v58-visible-repair-js">
 (function(){
-  if(window.__CoreUpV60TargetedFix) return;
-  window.__CoreUpV60TargetedFix = true;
+  if(window.__CoreUpV58VisibleRepair) return;
+  window.__CoreUpV58VisibleRepair = true;
+  var KSU_LOGO = '../assets/img/ksu_logo.png';
+  var CORE_LOGO = '../assets/img/core_up_mark.png';
+  var CORE_FALLBACKS = ['../assets/img/core_up_mark.png','../assets/img/core_up_icon.png','../assets/img/core_up_logo.png'];
+  var KSU_FALLBACKS = ['../assets/img/ksu_logo.png'];
 
   function cleanVisibleMathText(value){
-    var s = value == null ? '' : String(value), old;
+    var s = value == null ? '' : String(value);
+    var old;
     for(var pass=0; pass<4; pass++){
       old = s;
       s = s.replace(/\\\\/g,'\\');
@@ -6629,13 +6634,23 @@ if(window.__examRunning) startTimer(); else showIntroModal();/* Codex Adaptive F
       s = s.replace(/\\text\{([^{}]*)\}/g,'$1');
       s = s.replace(/\\mathrm\{([^{}]*)\}/g,'$1');
       s = s.replace(/\\operatorname\{([^{}]*)\}/g,'$1');
-      s = s.replace(/\\Rightarrow/g,'⇒').replace(/\\rightarrow/g,'→').replace(/\\leftarrow/g,'←');
-      s = s.replace(/\\subset/g,'⊂').replace(/\\neq|\\ne/g,'≠').replace(/\\times/g,'×');
-      s = s.replace(/\\cdots|\\ldots/g,'…').replace(/\\leq/g,'≤').replace(/\\geq/g,'≥').replace(/\\approx/g,'≈');
-      s = s.replace(/\\circ/g,'°').replace(/\\%/g,'%');
+      s = s.replace(/\\Rightarrow/g,'⇒');
+      s = s.replace(/\\rightarrow/g,'→');
+      s = s.replace(/\\leftarrow/g,'←');
+      s = s.replace(/\\subset/g,'⊂');
+      s = s.replace(/\\neq|\\ne/g,'≠');
+      s = s.replace(/\\times/g,'×');
+      s = s.replace(/\\cdots|\\ldots/g,'…');
+      s = s.replace(/\\leq/g,'≤');
+      s = s.replace(/\\geq/g,'≥');
+      s = s.replace(/\\approx/g,'≈');
+      s = s.replace(/\\circ/g,'°');
+      s = s.replace(/\\%/g,'%');
+      // Very small fallback for simple fractions if a raw fraction leaks to the visible text.
       s = s.replace(/\\(?:d?frac)\{([^{}]*)\}\{([^{}]*)\}/g,'$1 / $2');
       if(s === old) break;
     }
+    // Remove leftover slashes before common symbolic words only; do not touch Arabic punctuation.
     s = s.replace(/\\(Population|Sample|Parameter|Statistic|N|n|x|P|A|B|AB|O)\b/g,'$1');
     return s;
   }
@@ -6653,7 +6668,7 @@ if(window.__examRunning) startTimer(); else showIntroModal();/* Codex Adaptive F
         return NodeFilter.FILTER_REJECT;
       }
     });
-    var nodes=[], n;
+    var nodes = [], n;
     while((n = walker.nextNode())) nodes.push(n);
     nodes.forEach(function(node){
       var fixed = cleanVisibleMathText(node.nodeValue);
@@ -6664,90 +6679,266 @@ if(window.__examRunning) startTimer(); else showIntroModal();/* Codex Adaptive F
   function repairAssistantTitles(root){
     (root || document).querySelectorAll('.cu46-card-title').forEach(function(el){
       var t = cleanVisibleMathText(el.textContent || '');
+      // لا نعرض عنوان الفرع داخل بطاقة المساعد؛ البطاقة تعرض فقط نوع الطلب كما اتفقنا.
       t = t.replace(/\s*[—-]\s*.+$/,'').trim();
       if(t && el.textContent !== t) el.textContent = t;
     });
   }
 
-  function stabilizeStaticLogos(){
-    // Static paths only; no onerror loop and no repeated image swapping.
-    var k = document.querySelector('.logoWrap img');
-    if(k){
-      k.setAttribute('src','../assets/img/ksu_logo.png');
-      k.setAttribute('alt','King Saud University Logo');
-    }
-    var row = document.querySelector('.topbar .row');
-    if(row){
-      var wrap = row.querySelector('.coreup-v46-header-logo');
-      if(wrap){
-        var im = wrap.querySelector('img');
-        if(im){ im.setAttribute('src','../assets/img/core_up_mark.png'); im.setAttribute('alt','Core Up'); }
+  function setImageWithFallback(img, list){
+    if(!img || !list || !list.length) return;
+    var i = 0;
+    img.onerror = function(){
+      i += 1;
+      if(i < list.length) img.src = list[i];
+    };
+    if((img.getAttribute('src') || '') !== list[0]) img.src = list[0];
+    img.style.display = 'block';
+    img.style.visibility = 'visible';
+    img.style.opacity = '1';
+  }
+
+  function repairLogos(){
+    var ksuWrap = document.querySelector('.logoWrap');
+    if(ksuWrap){
+      ksuWrap.style.display = 'flex';
+      ksuWrap.style.visibility = 'visible';
+      ksuWrap.style.opacity = '1';
+      var ksu = ksuWrap.querySelector('img');
+      if(!ksu){
+        ksu = document.createElement('img');
+        ksu.alt = 'King Saud University Logo';
+        ksuWrap.appendChild(ksu);
       }
+      ksu.alt = 'King Saud University Logo';
+      setImageWithFallback(ksu, KSU_FALLBACKS);
     }
-    document.querySelectorAll('#cu46Drawer img[alt*="Core"], .cu46-brand img').forEach(function(im){
-      im.setAttribute('src','../assets/img/core_up_mark.png');
-      im.setAttribute('alt','Core Up');
-    });
+    var row = document.querySelector('.topbar .row') || document.querySelector('.topbar');
+    if(row){
+      var wraps = row.querySelectorAll('.coreup-v46-header-logo');
+      wraps.forEach(function(el, idx){ if(idx > 0) el.remove(); });
+      var coreWrap = row.querySelector('.coreup-v46-header-logo');
+      if(!coreWrap){
+        coreWrap = document.createElement('div');
+        coreWrap.className = 'coreup-v46-header-logo';
+        coreWrap.title = 'Core Up';
+        coreWrap.innerHTML = '<img alt="Core Up">';
+        row.appendChild(coreWrap);
+      }
+      coreWrap.style.display = 'flex';
+      coreWrap.style.visibility = 'visible';
+      coreWrap.style.opacity = '1';
+      var core = coreWrap.querySelector('img') || document.createElement('img');
+      if(!core.parentNode) coreWrap.appendChild(core);
+      core.alt = 'Core Up';
+      setImageWithFallback(core, CORE_FALLBACKS);
+    }
   }
 
-  function syncOldAIDrawer(){
-    var inner = document.getElementById('drawerAIInner');
-    if(!inner) return;
-    var rail = document.querySelector('.aiResultsRail');
-    if(rail) inner.innerHTML = rail.innerHTML;
-    else if(!inner.innerHTML.trim()) inner.innerHTML = '<div class="aiModelMeta">لا توجد بيانات بعد. ابدأ بحفظ إجابة ليبدأ التحليل.</div>';
-    repairTextNodes(inner);
+  function buildAIDrawerContent(){
+    var bank = (typeof BANK !== 'undefined' && Array.isArray(BANK)) ? BANK : [];
+    var done = 0, total = 0, correct = 0, wrong = 0;
+    try{
+      bank.forEach(function(q){
+        (q.branches || []).forEach(function(_b, bi){
+          total++;
+          var rec = (typeof ensureBranchRec === 'function') ? ensureBranchRec(q.id, bi) : null;
+          if(rec && (rec.status === 'correct' || rec.status === 'locked' || rec.status === 'wrong1')){
+            done++;
+            if(rec.status === 'correct') correct++; else wrong++;
+          }
+        });
+      });
+    }catch(e){}
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var currentTitle = '';
+    try{ currentTitle = bank[state.currentIndex] ? bank[state.currentIndex].title : ''; }catch(e){}
+    return ''+
+      '<div style="display:grid;gap:12px">'+
+        '<div style="padding:14px;border:1px solid #e0e7ff;border-radius:16px;background:#f8fafc">'+
+          '<div style="font-weight:1000;color:#0f172a;margin-bottom:6px">تحليل الأداء الحالي</div>'+
+          '<div style="font-weight:800;color:#334155;line-height:1.9">'+
+            'السؤال الحالي: '+(currentTitle || 'لم يبدأ بعد')+'<br>'+ 
+            'نسبة الإنجاز: '+pct+'%<br>'+ 
+            'الصحيح: '+correct+' | يحتاج مراجعة: '+wrong+
+          '</div>'+ 
+        '</div>'+ 
+        '<div style="padding:14px;border:1px solid #bae6fd;border-radius:16px;background:#f0f9ff;font-weight:850;color:#075985;line-height:1.9">'+
+          'هذا التحليل لا يعرض الحلول. استخدم المساعد الذكي داخل السؤال للتوجيه، ويظهر الحل الكامل فقط بعد المحاولة الثانية.'+
+        '</div>'+ 
+      '</div>';
   }
 
-  function openOldAIDrawer(){
-    var root = document.getElementById('fabRoot');
-    if(root) root.classList.remove('open');
-    syncOldAIDrawer();
-    var overlay = document.getElementById('fabOverlay');
-    var drawer = document.getElementById('drawerAI');
-    if(overlay) overlay.classList.add('show');
-    if(drawer) drawer.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    return true;
+  function openAnalysisDrawer(){
+    try{
+      var root = document.getElementById('fabRoot');
+      if(root) root.classList.remove('open');
+      var inner = document.getElementById('drawerAIInner');
+      var rail = document.querySelector('.aiResultsRail');
+      if(inner){
+        if(rail && rail.innerHTML && rail.innerHTML.trim()){
+          inner.innerHTML = rail.innerHTML;
+        }else{
+          inner.innerHTML = '<div style="padding:16px;border:1px solid #e2e8f0;border-radius:16px;background:#fff;color:#334155;font-weight:850;line-height:1.9">يظهر التحليل الذكي بعد حفظ بعض الإجابات.</div>';
+        }
+        try{ repairTextNodes(inner); }catch(_e){}
+      }
+      var overlay = document.getElementById('fabOverlay');
+      var drawer = document.getElementById('drawerAI');
+      if(overlay){
+        overlay.classList.add('show');
+        overlay.style.removeProperty('display');
+        overlay.style.removeProperty('visibility');
+        overlay.style.removeProperty('opacity');
+        overlay.style.setProperty('display','block','important');
+        overlay.style.setProperty('visibility','visible','important');
+        overlay.style.setProperty('opacity','1','important');
+      }
+      if(drawer){
+        drawer.classList.add('show');
+        drawer.style.removeProperty('display');
+        drawer.style.removeProperty('visibility');
+        drawer.style.removeProperty('opacity');
+        drawer.style.removeProperty('pointer-events');
+        drawer.style.setProperty('display','flex','important');
+        drawer.style.setProperty('visibility','visible','important');
+        drawer.style.setProperty('opacity','1','important');
+        drawer.style.setProperty('pointer-events','auto','important');
+        drawer.style.setProperty('transform','translateX(0)','important');
+      }
+      document.body.style.overflow = 'hidden';
+      return true;
+    }catch(e){ return false; }
   }
 
-  function installAnalysisBridge(){
-    if(window.__CoreUpV60AnalysisBridge) return;
-    window.__CoreUpV60AnalysisBridge = true;
-    var old = window.__CoreUpV58OldHandleFabAction || window.handleFabAction;
-    window.__CoreUpV60OldHandleFabAction = old;
+
+  function patchCloseForAnalysis(){
+    try{
+      var oldClose = window.closeFabSystem;
+      if(typeof oldClose === 'function' && !oldClose.__CoreUpV62Wrapped){
+        var wrapped = function(){
+          var r = oldClose.apply(this, arguments);
+          ['drawerAI','fabOverlay'].forEach(function(id){
+            var el = document.getElementById(id);
+            if(el){
+              el.classList.remove('show');
+              el.style.removeProperty('display');
+              el.style.removeProperty('visibility');
+              el.style.removeProperty('opacity');
+              el.style.removeProperty('pointer-events');
+              el.style.removeProperty('transform');
+            }
+          });
+          return r;
+        };
+        wrapped.__CoreUpV62Wrapped = true;
+        window.closeFabSystem = wrapped;
+      }
+    }catch(e){}
+  }
+
+  function patchFabAnalysis(){
+    var old = window.handleFabAction;
+    if(!window.__CoreUpV58OldHandleFabAction && typeof old === 'function') window.__CoreUpV58OldHandleFabAction = old;
     window.handleFabAction = function(action){
-      if(action === 'ai') return openOldAIDrawer();
-      if(typeof window.__CoreUpV60OldHandleFabAction === 'function') return window.__CoreUpV60OldHandleFabAction.apply(this, arguments);
+      if(action === 'ai') return openAnalysisDrawer();
+      var base = window.__CoreUpV58OldHandleFabAction;
+      if(typeof base === 'function') return base.apply(this, arguments);
     };
   }
 
-  function repair(root){
-    stabilizeStaticLogos();
+  function repairAll(root){
     repairAssistantTitles(root || document);
     repairTextNodes(root || document.body);
   }
 
-  var timer=null;
-  function schedule(root){ clearTimeout(timer); timer=setTimeout(function(){ repair(root || document); }, 50); }
+  var renderTimer = null;
+  function scheduleRepair(root){
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(function(){ repairAll(root || document); }, 30);
+  }
+
+  var originalRenderAll = window.renderAll;
+  if(typeof originalRenderAll === 'function' && !originalRenderAll.__CoreUpV58Wrapped){
+    var wrapped = function(){
+      var r = originalRenderAll.apply(this, arguments);
+      scheduleRepair(document);
+      return r;
+    };
+    wrapped.__CoreUpV58Wrapped = true;
+    window.renderAll = wrapped;
+  }
+  var originalRenderMain = window.renderMain;
+  if(typeof originalRenderMain === 'function' && !originalRenderMain.__CoreUpV58Wrapped){
+    var wrappedMain = function(){
+      var r = originalRenderMain.apply(this, arguments);
+      scheduleRepair(document);
+      return r;
+    };
+    wrappedMain.__CoreUpV58Wrapped = true;
+    window.renderMain = wrappedMain;
+  }
 
   function boot(){
-    repair(document);
-    installAnalysisBridge();
-    if(!window.__CoreUpV60Observer){
-      window.__CoreUpV60Observer = new MutationObserver(function(muts){
-        var target = document;
-        for(var i=0;i<muts.length;i++){ if(muts[i].target){ target = muts[i].target; break; } }
-        schedule(target);
+    repairLogos();
+    repairAll(document);
+    patchFabAnalysis();
+    patchCloseForAnalysis();
+    var mo = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if(m.addedNodes && m.addedNodes.length){
+          m.addedNodes.forEach(function(node){ if(node.nodeType === 1) repairAll(node); });
+        }
       });
-      window.__CoreUpV60Observer.observe(document.body,{childList:true,subtree:true,characterData:true});
-    }
+      scheduleRepair(document);
+    });
+    try{ mo.observe(document.body, {childList:true, subtree:true, characterData:true}); }catch(e){}
+    setTimeout(function(){ repairAll(document); patchFabAnalysis(); }, 300);
+    setTimeout(function(){ repairAll(document); patchFabAnalysis(); }, 900);
+    setTimeout(function(){ repairAll(document); patchFabAnalysis(); }, 1800);
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
-  window.addEventListener('load', function(){ repair(document); installAnalysisBridge(); });
+  window.addEventListener('load', function(){ setTimeout(boot, 50); });
 })();
 </script>
 
+
+<!-- CoreUp V63 logos-only final stabilizer: no math/assistant changes -->
+<style id="coreup-v63-logo-only-css">
+  .logoWrap img,.coreup-v46-header-logo img{display:block!important;visibility:visible!important;opacity:1!important;object-fit:contain!important;}
+  .logoWrap img{max-height:44px!important;width:auto!important;}
+  .coreup-v46-header-logo img{width:34px!important;height:34px!important;}
+</style>
+<script id="coreup-v63-logo-only-js">
+(function(){
+  if(window.__CoreUpV63LogoOnly) return; window.__CoreUpV63LogoOnly=true;
+  var KSU='../assets/img/ksu_logo.png';
+  var CORE='../assets/img/core_up_mark.png';
+  function fixLogo(img, src, alt){
+    if(!img) return;
+    img.onerror=null;
+    img.removeAttribute('srcset');
+    img.alt=alt;
+    if(img.getAttribute('src')!==src) img.setAttribute('src',src);
+    img.style.display='block'; img.style.visibility='visible'; img.style.opacity='1'; img.style.objectFit='contain';
+  }
+  function run(){
+    var k=document.querySelector('.logoWrap img');
+    if(k){ fixLogo(k,KSU,'King Saud University'); k.style.maxHeight='44px'; k.style.width='auto'; }
+    var row=document.querySelector('.topbar .row') || document.querySelector('.topbar');
+    if(row){
+      var wraps=row.querySelectorAll('.coreup-v46-header-logo');
+      wraps.forEach(function(w,i){ if(i>0) w.remove(); });
+      var wrap=row.querySelector('.coreup-v46-header-logo');
+      if(!wrap){ wrap=document.createElement('div'); wrap.className='coreup-v46-header-logo'; wrap.title='Core Up'; wrap.innerHTML='<img>'; row.appendChild(wrap); }
+      var c=wrap.querySelector('img'); if(!c){ c=document.createElement('img'); wrap.appendChild(c); }
+      fixLogo(c,CORE,'Core Up'); c.style.width='34px'; c.style.height='34px';
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  window.addEventListener('load',run);
+})();
+</script>
 
 </body>
 </html>
